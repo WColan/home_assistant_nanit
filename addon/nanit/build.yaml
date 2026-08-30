@@ -1,0 +1,11 @@
+build_from:
+  aarch64: ghcr.io/hassio-addons/base:stable
+  amd64: ghcr.io/hassio-addons/base:stable
+  armv7: ghcr.io/hassio-addons/base:stable
+args:
+  # Which ref of WColan/home_assistant_nanit to compile. Bump when you push
+  # changes you want the add-on to pick up (or point at "main").
+  NANIT_REF: v1.4.0-addon
+labels:
+  org.opencontainers.image.title: Nanit Bridge
+  org.opencontainers.image.source: https://github.com/WColan/home_assistant_nanit

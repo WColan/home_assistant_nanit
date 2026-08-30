@@ -61,6 +61,7 @@ func (app *App) Run(ctx utils.GracefulContext) {
 
 	// MQTT
 	if app.MQTTConnection != nil {
+		app.MQTTConnection.SetBabies(app.SessionStore.Session.Babies)
 		ctx.RunAsChild(func(childCtx utils.GracefulContext) {
 			app.MQTTConnection.Run(app.BabyStateManager, childCtx)
 		})

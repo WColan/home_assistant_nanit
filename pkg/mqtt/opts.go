@@ -9,4 +9,8 @@ type Opts struct {
 	Password string
 
 	TopicPrefix string
+
+	// Home Assistant MQTT discovery
+	DiscoveryEnabled bool
+	DiscoveryPrefix  string // usually "homeassistant"
 }

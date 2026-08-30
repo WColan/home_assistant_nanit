@@ -52,11 +52,13 @@ func main() {
 
 	if utils.EnvVarBool("NANIT_MQTT_ENABLED", false) {
 		opts.MQTT = &mqtt.Opts{
-			BrokerURL:   utils.EnvVarReqStr("NANIT_MQTT_BROKER_URL"),
-			ClientID:    utils.EnvVarStr("NANIT_MQTT_CLIENT_ID", "nanit"),
-			Username:    utils.EnvVarStr("NANIT_MQTT_USERNAME", ""),
-			Password:    utils.EnvVarStr("NANIT_MQTT_PASSWORD", ""),
-			TopicPrefix: utils.EnvVarStr("NANIT_MQTT_PREFIX", "nanit"),
+			BrokerURL:        utils.EnvVarReqStr("NANIT_MQTT_BROKER_URL"),
+			ClientID:         utils.EnvVarStr("NANIT_MQTT_CLIENT_ID", "nanit"),
+			Username:         utils.EnvVarStr("NANIT_MQTT_USERNAME", ""),
+			Password:         utils.EnvVarStr("NANIT_MQTT_PASSWORD", ""),
+			TopicPrefix:      utils.EnvVarStr("NANIT_MQTT_PREFIX", "nanit"),
+			DiscoveryEnabled: utils.EnvVarBool("NANIT_MQTT_DISCOVERY", true),
+			DiscoveryPrefix:  utils.EnvVarStr("NANIT_MQTT_DISCOVERY_PREFIX", "homeassistant"),
 		}
 	}
 

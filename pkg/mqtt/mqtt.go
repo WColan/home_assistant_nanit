@@ -19,6 +19,7 @@ type Connection struct {
 	Opts                      Opts
 	StateManager              *baby.StateManager
 	client                    MQTT.Client
+	babies                    map[string]string // uid -> name, for HA discovery
 	sendLightCommandHandler   SendLightCommandHandler
 	sendStandbyCommandHandler SendStandbyCommandHandler
 }
@@ -26,8 +27,21 @@ type Connection struct {
 // NewConnection - constructor
 func NewConnection(opts Opts) *Connection {
 	return &Connection{
-		Opts: opts,
+		Opts:   opts,
+		babies: map[string]string{},
 	}
+}
+
+// SetBabies - registers uid -> name so HA discovery can name the device.
+// Call before Run().
+func (conn *Connection) SetBabies(babies []baby.Baby) {
+	for _, b := range babies {
+		conn.babies[b.UID] = b.Name
+	}
+}
+
+func (conn *Connection) statusTopic() string {
+	return fmt.Sprintf("%v/status", conn.Opts.TopicPrefix)
 }
 
 // Run - runs the mqtt connection handler
@@ -40,6 +54,8 @@ func (conn *Connection) Run(manager *baby.StateManager, ctx utils.GracefulContex
 	opts.SetUsername(conn.Opts.Username)
 	opts.SetPassword(conn.Opts.Password)
 	opts.SetCleanSession(false)
+	// Last will so HA marks the entities unavailable if the bridge dies
+	opts.SetWill(conn.statusTopic(), "offline", 1, true)
 
 	conn.client = MQTT.NewClient(opts)
 
@@ -156,6 +172,12 @@ func runMqtt(conn *Connection, attempt utils.AttemptContext) {
 
 	log.Info().Str("broker_url", conn.Opts.BrokerURL).Msg("Successfully connected to MQTT broker")
 
+	// Mark the bridge online and (re)publish HA discovery configs
+	conn.client.Publish(conn.statusTopic(), 1, true, "online")
+	for uid, name := range conn.babies {
+		conn.publishDiscovery(uid, name)
+	}
+
 	unsubscribe := conn.StateManager.Subscribe(func(babyUID string, state baby.State) {
 		publish := func(key string, value interface{}) {
 			topic := fmt.Sprintf("%v/babies/%v/%v", conn.Opts.TopicPrefix, babyUID, key)
@@ -169,6 +191,16 @@ func runMqtt(conn *Connection, attempt utils.AttemptContext) {
 
 		for key, value := range state.AsMap(false) {
 			publish(key, value)
+		}
+
+		// Derive HA-friendly motion/sound topics from the raw event timestamps:
+		//   <key>        -> RFC3339 timestamp (device_class: timestamp)
+		//   <key>_active -> "true" for `activeWindow`, then "false"
+		if state.MotionTimestamp != nil {
+			conn.publishEvent(babyUID, "motion", *state.MotionTimestamp)
+		}
+		if state.SoundTimestamp != nil {
+			conn.publishEvent(babyUID, "sound", *state.SoundTimestamp)
 		}
 
 		if state.StreamState != nil && *state.StreamState != baby.StreamState_Unknown {
@@ -185,5 +217,26 @@ func runMqtt(conn *Connection, attempt utils.AttemptContext) {
 
 	log.Debug().Msg("Closing MQTT connection on interrupt")
 	unsubscribe()
+	conn.client.Publish(conn.statusTopic(), 1, true, "offline")
 	conn.client.Disconnect(250)
+}
+
+// eventActiveWindow - how long a motion/sound "_active" binary_sensor stays on
+// after an event (Nanit only gives us the event timestamp, not a duration).
+const eventActiveWindow = 45 * time.Second
+
+// publishEvent - turns a raw motion/sound epoch into HA-friendly topics:
+//
+//	<key>        retained RFC3339 timestamp (for a device_class: timestamp sensor)
+//	<key>_active "true" now, "false" after eventActiveWindow (device_class motion/sound)
+func (conn *Connection) publishEvent(babyUID, key string, epoch int32) {
+	base := fmt.Sprintf("%v/babies/%v", conn.Opts.TopicPrefix, babyUID)
+	ts := time.Unix(int64(epoch), 0).UTC().Format(time.RFC3339)
+	conn.client.Publish(fmt.Sprintf("%v/%v", base, key), 0, true, ts)
+
+	activeTopic := fmt.Sprintf("%v/%v_active", base, key)
+	conn.client.Publish(activeTopic, 0, false, "true")
+	time.AfterFunc(eventActiveWindow, func() {
+		conn.client.Publish(activeTopic, 0, false, "false")
+	})
 }

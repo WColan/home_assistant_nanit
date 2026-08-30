@@ -1,6 +1,23 @@
 # Background
 
-This is a fork of a no-longer-maintained project (https://gitlab.com/adam.stanek/nanit) with added support for Nanit's (now required) 2FA authentication.
+This is a fork of [indiefan/home_assistant_nanit](https://github.com/indiefan/home_assistant_nanit)
+(itself a fork of the no-longer-maintained https://gitlab.com/adam.stanek/nanit),
+with two additions:
+
+- **Home Assistant MQTT discovery** — set `NANIT_MQTT_DISCOVERY=true` (default when
+  MQTT is enabled) and Home Assistant auto-creates a *Nanit* device with
+  temperature, humidity, motion, sound, night-mode and stream-health entities,
+  plus **night-light** and **standby** switches. No hand-written YAML sensors.
+  Also publishes a `nanit/status` availability topic (LWT) and HA-friendly
+  `motion` / `sound` timestamp topics and `motion_active` / `sound_active`
+  binary topics.
+- **A Home Assistant add-on** (`addon/`) that runs this bridge on your HA box,
+  auto-wired to the Mosquitto add-on. See [`addon/nanit/DOCS.md`](addon/nanit/DOCS.md).
+
+New MQTT env vars: `NANIT_MQTT_DISCOVERY` (bool, default `true`),
+`NANIT_MQTT_DISCOVERY_PREFIX` (default `homeassistant`).
+
+---
 
 # Installation (Docker)
 
