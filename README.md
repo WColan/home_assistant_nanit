@@ -11,8 +11,8 @@ with two additions:
   Also publishes a `nanit/status` availability topic (LWT) and HA-friendly
   `motion` / `sound` timestamp topics and `motion_active` / `sound_active`
   binary topics.
-- **A Home Assistant add-on** (`addon/`) that runs this bridge on your HA box,
-  auto-wired to the Mosquitto add-on. See [`addon/nanit/DOCS.md`](addon/nanit/DOCS.md).
+- **A Home Assistant add-on** (`nanit/`) that runs this bridge on your HA box,
+  auto-wired to the Mosquitto add-on. See [`nanit/DOCS.md`](nanit/DOCS.md).
 
 New MQTT env vars: `NANIT_MQTT_DISCOVERY` (bool, default `true`),
 `NANIT_MQTT_DISCOVERY_PREFIX` (default `homeassistant`).

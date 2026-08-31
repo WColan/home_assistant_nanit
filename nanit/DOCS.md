@@ -35,7 +35,7 @@ Nanit requires 2FA, so authentication happens once, outside the add-on. On any
 machine with `bash`, `curl` and `jq` (your Mac is fine):
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/WColan/home_assistant_nanit/main/addon/nanit/get-token.sh | bash
+curl -sSL https://raw.githubusercontent.com/WColan/home_assistant_nanit/main/nanit/get-token.sh | bash
 ```
 
 Enter your Nanit email/password, then the code it emails you. It prints a
